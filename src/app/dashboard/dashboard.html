@@ -1,0 +1,389 @@
+<div class="dashboard-container">
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" [class.show]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="isSidebarOpen">
+    <div class="sidebar-header">
+      <!-- Logo -->
+      <img src="/assets/Kloudspot_logo.svg" alt="Kloudspot" style="height: 40px; filter: brightness(0) invert(1);"> 
+      <!-- Close/Toggle Btn inside sidebar -->
+      <img src="/hamburger_icon.svg" (click)="toggleSidebar()" alt="Menu" style="width: 24px; height: 24px; cursor: pointer; margin-left: auto;">
+    </div>
+    <nav class="sidebar-nav">
+      <a (click)="switchView('overview')" [class.active]="currentView === 'overview'" class="nav-item">
+        <img src="/overview_Icon.png" alt="Overview" style="width: 20px; height: 20px;">
+        <span>Overview</span>
+      </a>
+      <a (click)="switchView('entries')" [class.active]="currentView === 'entries'" class="nav-item">
+        <img src="/Crowd_entries_icon.png" alt="Crowd Entries" style="width: 20px; height: 20px;">
+        <span>Crowd Entries</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <img src="/Logout_icon.png" alt="Logout" style="width: 20px; height: 20px;">
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="header">
+      <!-- Mobile Toggle Button -->
+      <div class="mobile-toggle" (click)="toggleSidebar()">
+        <img src="/hamburger_icon.svg" alt="Menu" style="width: 24px; height: 24px;">
+      </div>
+
+      <div class="breadcrumbs">
+        <span class="breadcrumb-item">Crowd Solutions</span>
+        <div class="separator"></div>
+        <div class="location-selector">
+            <!-- Location Pin Icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span class="breadcrumb-item active">Avenue Mall</span>
+            <!-- Dropdown Arrow -->
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+         <!-- Language Toggle Pill -->
+        <button class="lang-toggle">
+             <span class="lang-opt active">En</span>
+             <span class="lang-opt arabic">ع</span>
+        </button>
+
+        <button class="icon-btn notification-btn" (click)="toggleAlerts()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <!-- Notification Dot (Red) -->
+          <span class="notification-dot" *ngIf="unreadAlerts || true"></span> 
+        </button>
+        
+        <div class="user-avatar" (click)="toggleProfile()">
+          <span *ngIf="!userProfile.profilePic">A</span>
+           <img *ngIf="userProfile.profilePic" [src]="userProfile.profilePic" alt="Profile">
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-body">
+
+    <!-- Overview Content -->
+    <div *ngIf="currentView === 'overview'">
+      
+      <!-- Page Header with Date Filter -->
+      <div class="page-header">
+          <h2 class="section-title">Overview</h2>
+          
+          <div class="date-filter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Today</span>
+         </div>
+      </div>
+      
+      <!-- Stats Cards -->
+      <section class="stats-section">
+        <h3 class="subsection-title">Occupancy</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3 class="stat-label">Live Occupancy</h3>
+            <div class="stat-value">{{ liveOccupancy }}</div>
+            <div class="stat-meta up">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                10% More than yesterday
+            </div>
+          </div>
+          <div class="stat-card">
+            <h3 class="stat-label">Today's Footfall</h3>
+            <div class="stat-value">{{ todaysFootfall }}</div>
+             <div class="stat-meta down">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                10% Less than yesterday
+            </div>
+          </div>
+          <div class="stat-card">
+            <h3 class="stat-label">Avg Dwell Time</h3>
+            <div class="stat-value">{{ avgDwellTime }}</div>
+             <div class="stat-meta up">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                6% More than yesterday
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <!-- Overall Occupancy Chart -->
+        <div class="chart-card wide">
+          <h3 class="chart-title">Overall Occupancy</h3>
+          <div class="chart-container">
+               <!-- Placeholder for chart, in real app would be Chart.js or D3 -->
+             <div class="chart-placeholder-img">
+             <div class="line-chart-wrapper" style="display: flex; align-items: stretch;">
+                
+                <!-- Y-Axis Title -->
+                <div style="writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font-size: 12px; font-weight: 500; color: #4F4F4F; margin-right: 8px; margin-bottom: 20px;">Count</div>
+
+                <!-- Y-Axis Labels -->
+                <div class="y-axis-labels" style="display: flex; flex-direction: column; justify-content: space-between; height: 200px; margin-right: 10px; font-size: 11px; color: #828282; min-width: 25px; text-align: right;">
+                    <span *ngFor="let label of yAxisLabels">{{ label }}</span>
+                </div>
+
+                <!-- Chart Content -->
+                <div style="flex-grow: 1; position: relative;">
+                    <svg viewBox="0 0 800 200" preserveAspectRatio="none" style="overflow: visible; width: 100%;">
+                        
+                      <!-- Grid Lines (Horizontal) -->
+                      <g *ngFor="let label of yAxisLabels; let i = index">
+                          <!-- Don't draw line for 0 (bottom axes handled by border usually, or just draw it) -->
+                          <line x1="0" y1="0" x2="800" y2="0" 
+                                [attr.transform]="'translate(0, ' + (i * (200 / (yAxisLabels.length - 1))) + ')'"
+                                stroke="#E0E0E0" stroke-width="1" stroke-dasharray="3,3" />
+                      </g>
+
+                      <!-- Fill Area -->
+                      <path [attr.d]="occupancyFillPath" fill="#F0F9FF" fill-opacity="0.5" />
+                      
+                      <!-- Line -->
+                      <path [attr.d]="occupancyChartPath" fill="none" stroke="#56CCF2" stroke-width="2" />
+                      
+                      <!-- Live Line -->
+                      <line *ngIf="liveLineX >= 0" 
+                            [attr.x1]="liveLineX" y1="0" 
+                            [attr.x2]="liveLineX" y2="200" 
+                            stroke="#EB5757" stroke-width="2" stroke-dasharray="5,5" />
+                        
+                      <!-- Live Label Badge -->
+                       <g *ngIf="liveLineX >= 0">
+                           <rect [attr.x]="liveLineX - 15" y="-10" width="30" height="16" rx="4" fill="#EB5757" />
+                           <text [attr.x]="liveLineX" y="1" fill="white" font-size="10" font-weight="bold" text-anchor="middle">LIVE</text>
+                       </g>
+
+                      <!-- Interactive Points (Hit Targets) -->
+                      <g *ngFor="let point of chartPoints" 
+                         (mouseenter)="showTooltip(point)" 
+                         (mouseleave)="hideTooltip()"
+                         style="cursor: pointer;"
+                         pointer-events="all">
+                          <!-- Invisible wide capture area covering the gap -->
+                          <rect [attr.x]="point.x - (pointWidth / 2)" [attr.y]="0" 
+                                [attr.width]="pointWidth" height="200" 
+                                fill="white" fill-opacity="0" />
+                          
+                          <!-- Visible dot on hover -->
+                          <circle *ngIf="hoveredPoint === point" [attr.cx]="point.x" [attr.cy]="point.y" r="5" fill="#2D9CDB" stroke="white" stroke-width="2" />
+                      </g>
+    
+                      <!-- Tooltip -->
+                      <g *ngIf="hoveredPoint" [attr.transform]="'translate(' + hoveredPoint.x + ',' + (hoveredPoint.y - 40) + ')'" pointer-events="none">
+                          <!-- Tooltip Background -->
+                          <rect x="-30" y="0" width="60" height="35" rx="4" fill="#1F2937" opacity="0.9" />
+                          <!-- Tooltip Triangle -->
+                          <path d="M-5,35 L0,40 L5,35 Z" fill="#1F2937" opacity="0.9" />
+                          <!-- Text -->
+                          <text x="0" y="15" fill="white" font-size="10" text-anchor="middle" font-weight="bold">{{ hoveredPoint.value }}</text>
+                          <text x="0" y="28" fill="#9CA3AF" font-size="9" text-anchor="middle">{{ hoveredPoint.time }}</text>
+                      </g>
+                    </svg>
+                    
+                    <div class="chart-x-axis" style="margin-top: 5px; display: flex; justify-content: space-between; color: #828282; font-size: 11px;">
+                        <span *ngFor="let label of xAxisLabels">{{ label }}</span>
+                    </div>
+                    <div style="text-align: center; font-size: 12px; font-weight: 500; color: #4F4F4F; margin-top: 5px;">Time</div>
+                </div>
+             </div>
+          </div>
+        </div>
+        </div>
+      </section>
+
+        <h3 class="subsection-title">Demographics</h3>
+        <!-- Demographics Section -->
+        <div class="demographics-row">
+          <!-- Donut Chart -->
+          <div class="chart-card">
+            <h3 class="chart-title">Chart of Demographics</h3>
+            <div class="donut-chart-wrapper">
+                <div class="donut-chart">
+                  <svg viewBox="0 0 200 200">
+                    <!-- Background Circle -->
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#E0E0E0" stroke-width="20"></circle>
+                    <!-- Value Circle (Female - Green) -->
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#6FCF97" stroke-width="20" 
+                            [attr.stroke-dasharray]="donutStrokeDash" transform="rotate(-90 100 100)"></circle>
+                    <text x="100" y="95" text-anchor="middle" font-size="12" fill="#828282">Total Crowd</text>
+                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="700" fill="#333">100%</text>
+                  </svg>
+                </div>
+                <div class="chart-legend vertical">
+                  <div class="legend-item">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#2D9CDB" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="5"/><path d="M12 11c-4.4 0-8 2.7-8 6v5h16v-5c0-3.3-3.6-6-8-6z"/></svg>
+                    <span>{{ malePercentage }}% Males</span>
+                  </div>
+                  <div class="legend-item">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#6FCF97" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="5"/><path d="M12 11c-4.4 0-8 2.7-8 6v5h16v-5c0-3.3-3.6-6-8-6z"/><path d="M16.5 15.5l3.5 3.5m0-3.5l-3.5 3.5" stroke="currentColor" stroke-width="2"/></svg>
+                    <span>{{ femalePercentage }}% Females</span>
+                  </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- Demographics Attribute Chart -->
+          <div class="chart-card">
+            <h3 class="chart-title">Demographics Analysis</h3>
+            <div class="chart-header-actions">
+                 <div class="legend-indicator male">Male</div>
+                 <div class="legend-indicator female">Female</div>
+            </div>
+
+            <div class="chart-container" style="display: flex; align-items: center;">
+               <!-- Rotated Y-Axis Label -->
+               <div style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; color: #828282; margin-right: 8px; font-weight: 500;">Count</div>
+
+               <!-- Simple Y Axis -->
+               <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: #828282; margin-right: 8px; height: 150px;">
+                   <span>250</span>
+                   <span>200</span>
+                   <span>150</span>
+                   <span>100</span>
+                   <span>50</span>
+                   <span>0</span>
+               </div>
+               <div class="chart-placeholder-img" style="flex: 1;">
+              <svg class="line-chart" viewBox="0 0 400 150" preserveAspectRatio="none">
+                 <!-- Grid Lines (Horizontal Dashed) -->
+                 <g stroke="#E0E0E0" stroke-width="1" stroke-dasharray="4 4">
+                    <line x1="0" y1="0" x2="400" y2="0" />
+                    <line x1="0" y1="30" x2="400" y2="30" />
+                    <line x1="0" y1="60" x2="400" y2="60" />
+                    <line x1="0" y1="90" x2="400" y2="90" />
+                    <line x1="0" y1="120" x2="400" y2="120" />
+                    <line x1="0" y1="150" x2="400" y2="150" />
+                 </g>
+                 <!-- Vertical Grid Lines -->
+                 <g stroke="#F2F2F2" stroke-width="1" stroke-dasharray="4 4">
+                     <line x1="0" y1="0" x2="0" y2="150" />
+                     <line x1="66" y1="0" x2="66" y2="150" />
+                     <line x1="133" y1="0" x2="133" y2="150" />
+                     <line x1="200" y1="0" x2="200" y2="150" />
+                     <line x1="266" y1="0" x2="266" y2="150" />
+                     <line x1="333" y1="0" x2="333" y2="150" />
+                     <line x1="400" y1="0" x2="400" y2="150" />
+                 </g>
+
+                 <!-- Male Line (Blue) -->
+                <path [attr.d]="maleTrendPath" fill="none" stroke="#2D9CDB" stroke-width="2" />
+                 <!-- Female Line (Green) -->
+                <path [attr.d]="femaleTrendPath" fill="none" stroke="#6FCF97" stroke-width="2" />
+              </svg>
+              <div class="chart-x-axis">
+                  <span *ngFor="let label of xAxisLabels">{{ label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- End Overview -->
+
+
+    <div *ngIf="currentView === 'entries'" class="entries-view">
+      <div class="entries-table-container">
+        <table class="entries-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Sex</th>
+              <th>Entry</th>
+              <th>Exit</th>
+              <th>Dwell Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of crowdEntries">
+              <td>
+                <div class="name-cell">
+                   <!-- Random color or just teal -->
+                  <div class="avatar">{{ entry.name.charAt(0) }}</div>
+                  <span>{{ entry.name }}</span>
+                </div>
+              </td>
+              <td>{{ entry.sex }}</td>
+              <td>{{ entry.entry }}</td>
+              <td>{{ entry.exit }}</td>
+              <td>{{ entry.dwellTime }}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Pagination Footer -->
+        <div class="pagination-footer">
+            <button class="page-btn nav" (click)="prevPage()" [disabled]="currentPage === 1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="page-numbers">
+                <button *ngFor="let p of pagesArray" 
+                        class="page-btn" 
+                        [class.active]="p === currentPage"
+                        (click)="goToPage(p)">
+                    {{ p }}
+                </button>
+            </div>
+            <button class="page-btn nav" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Alerts Panel -->
+    <div class="alerts-panel" [class.show]="showAlerts">
+      <div class="alerts-header">
+        <h3>Alerts</h3>
+        <button class="close-btn" (click)="toggleAlerts()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="alerts-list">
+        <div class="alert-item" *ngFor="let alert of alerts" 
+             (click)="selectAlert(alert)"
+             [class.selected]="selectedAlert === alert">
+          <div class="alert-date">{{ alert.date }} {{ alert.time }}</div>
+          <div class="alert-name">{{ alert.name }}</div>
+          <div class="alert-zone">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>{{ alert.zone }}</span>
+          </div>
+          <span class="alert-badge" [ngClass]="alert.priority">
+            {{ alert.priority === 'high' ? 'High' : alert.priority === 'medium' ? 'Medium' : 'Low' }}
+          </span>
+        </div>
+      </div>
+    </div>
+    </div>
+  </main>
+</div>

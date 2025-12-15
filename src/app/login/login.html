@@ -1,0 +1,46 @@
+<div class="login-container">
+  <div class="content">
+    <div class="left-section">
+      <h1>Welcome to the<br>Crowd Management System</h1>
+    </div>
+    <div class="right-section">
+      <div class="login-card">
+        <div class="card-header">
+          <div class="logo">
+            <!-- Used the SVG code from the existing file, assuming it's correct or I should load the svg file -->
+            <img src="/assets/Kloudspot_logo.svg" alt="Kloudspot" style="height: 50px;">
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Login Form -->
+          <form>
+            <div class="form-group">
+              <label for="login">Log In *</label>
+              <input type="text" id="login" placeholder="test@test.com" [(ngModel)]="username" name="username">
+            </div>
+            <div class="form-group">
+              <label for="password">Password *</label>
+              <div class="password-input">
+                <input [type]="showPassword ? 'text' : 'password'" id="password" placeholder="********" [(ngModel)]="password" name="password">
+                <span class="eye-icon" (click)="togglePassword()">
+                  <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div *ngIf="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
+            <button type="submit" class="login-btn" (click)="onLogin()">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.login-container {
+  background-image: url('/assets/office_background_image.png');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+  z-index: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 60px;
+}
+
+.left-section {
+  max-width: 50%;
+}
+
+.left-section h1 {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.right-section {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1; /* Allow it to take space */
+  min-width: 350px; /* Prevent collapse */
+}
+
+.login-card {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.card-header {
+  /* background-color: #124e58;  Replaced by image below */
+  background: url('/Clip%20path%20group.png') no-repeat center center;
+  background-size: cover;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card-body {
+  padding: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ccc; /* Standard gray border */
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  color: #333;
+}
+
+.form-group input::placeholder {
+  color: #999;
+  font-weight: 500; /* Bold placeholder as seen in "Parking_solutions" */
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #124e58;
+}
+
+.password-input {
+  position: relative;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #009490; /* User requested color */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+  background-color: #007a76; /* Slightly darker shade of #009490 */
+}
+
+/* Error Message */
+.error-message {
+  color: #dc2626;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .content {
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .left-section {
+    max-width: 100%;
+  }
+  
+  .left-section h1 {
+     font-size: 2rem;
+  }
+
+  .right-section {
+     justify-content: center;
+  }
+}
