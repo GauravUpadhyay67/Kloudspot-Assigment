@@ -100,8 +100,12 @@ export class Dashboard implements OnInit, OnDestroy {
         // --- 3. Generate Grid/Path ---
         this.chartPoints = [];
         const pathPoints: string[] = [];
+        const nowMs = new Date().getTime();
 
-        buckets.forEach((b) => {
+        // Filter buckets to only show data up to NOW
+        const validBuckets = buckets.filter(b => b.utc <= nowMs);
+
+        validBuckets.forEach((b) => {
             if (!b.utc) return;
             // X Position: Time-based
             const timeOffset = b.utc - startTime;
@@ -123,11 +127,21 @@ export class Dashboard implements OnInit, OnDestroy {
         });
 
         // Set Live Line X based on NOW (or last bucket if past)
-        const nowMs = new Date().getTime();
+        // nowMs is already defined above
         const nowOffset = nowMs - startTime;
         this.liveLineX = (nowOffset / timeRange) * width;
         // Clamp live line
         this.liveLineX = Math.max(0, Math.min(this.liveLineX, width));
+
+        // [Fix] Add the "Live" point to the path so it touches the red line
+        const liveY = height - ((this.liveOccupancy / maxVal) * (height - padding));
+        pathPoints.push(`${this.liveLineX},${liveY}`);
+        this.chartPoints.push({
+            x: this.liveLineX,
+            y: liveY,
+            value: this.liveOccupancy,
+            time: 'Live'
+        });
 
         if (pathPoints.length === 0) return;
 
@@ -140,8 +154,7 @@ export class Dashboard implements OnInit, OnDestroy {
         const lastPointX = pathPoints[pathPoints.length - 1].split(',')[0];
         this.occupancyFillPath = `${this.occupancyChartPath} L${lastPointX},${height} L${firstX},${height} Z`;
 
-        // Live Line (Last point)
-        this.liveLineX = parseFloat(lastPointX);
+
     }
     userProfile = {
         name: 'Admin User',
