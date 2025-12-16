@@ -30,7 +30,7 @@ export class AnalyticsService {
     private getAnalyticsPayload(endpoint: string, additionalParams: any = {}): Observable<any> {
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const currentTimestamp = now.getTime();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
 
         // Correct Site ID for Dubai Mall
         const siteId = '8bd0d580-fdac-44a4-a6e4-367253099c4e';
@@ -38,7 +38,7 @@ export class AnalyticsService {
         return this.http.post<any>(`${this.baseUrl}/${endpoint}`, {
             siteId: siteId,
             fromUtc: startOfDay,
-            toUtc: currentTimestamp,
+            toUtc: endOfDay,
             granularity: '15m',
             ...additionalParams
         }).pipe(

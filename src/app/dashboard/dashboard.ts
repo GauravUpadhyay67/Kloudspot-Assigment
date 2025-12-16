@@ -16,9 +16,26 @@ import { SocketService } from '../services/socket.service';
 export class Dashboard implements OnInit, OnDestroy {
     currentView: 'overview' | 'entries' = 'overview';
     showAlerts = false;
+    alerts: any[] = [];
     showProfile = false;
     unreadAlerts = false;
     isSidebarOpen = false;
+
+    // Dropdown Logic
+    locations = ['Avenue Mall', 'City Center', 'Marina Plaza'];
+    selectedLocation = 'Avenue Mall';
+    showLocationDropdown = false;
+
+    toggleLocationDropdown() {
+        this.showLocationDropdown = !this.showLocationDropdown;
+    }
+
+    selectLocation(loc: string) {
+        this.selectedLocation = loc;
+        this.showLocationDropdown = false;
+        // Optionally reload data here specific to location
+        if (this.cdr) this.cdr.detectChanges();
+    }
 
     toggleSidebar() {
         this.isSidebarOpen = !this.isSidebarOpen;
@@ -53,95 +70,66 @@ export class Dashboard implements OnInit, OnDestroy {
         const height = 200;
         const padding = 20;
 
+        // Time Range: Use TODAY'S 00:00 to 24:00 Range
+        // This ensures that even if API returns previous day's data (yesterday 22:00), 
+        // the graph correctly aligns to the Current Day view.
+        const now = new Date();
+        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime();
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime();
+        const timeRange = endTime - startTime;
+
         // --- 1. Calculate Y-Axis (Count) ---
-        // Find max value in data, default to 250 if low
         const dataMax = Math.max(...buckets.map(b => b.avg || 0));
         let maxVal = Math.max(dataMax, 50);
-
-        // Round maxVal up to nice number (e.g. multiple of 50)
         maxVal = Math.ceil(maxVal / 50) * 50;
         this.yAxisMax = maxVal;
 
-        // Generate Labels (0 to Max, 5 steps)
+        // Labels
         this.yAxisLabels = [];
         const steps = 5;
         for (let i = steps; i >= 0; i--) {
             this.yAxisLabels.push(Math.round((maxVal / steps) * i));
         }
 
-        // --- 2. Calculate X-Axis (Time) ---
-        // We want to show ~6 labels evenly distributed
+        // --- 2. Calculate X-Axis (Fixed 6 labels: 00:00, 04:00, ... 20:00) ---
         this.xAxisLabels = [];
-        const labelCount = 6;
-        const step = Math.max(1, Math.floor(buckets.length / (labelCount - 1)));
-
-        for (let i = 0; i < buckets.length; i += step) {
-            const b = buckets[i];
-            if (b.utc) {
-                const date = new Date(b.utc);
-                const label = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-                this.xAxisLabels.push(label);
-            }
+        for (let i = 0; i <= 24; i += 4) {
+            this.xAxisLabels.push(`${i.toString().padStart(2, '0')}:00`);
         }
-        // Always include the very last time if not close to the previous pushed label
-        const lastBucket = buckets[buckets.length - 1];
-        if (lastBucket && lastBucket.utc) {
-            const lastDate = new Date(lastBucket.utc);
-            const lastLabel = lastDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-            if (this.xAxisLabels[this.xAxisLabels.length - 1] !== lastLabel) {
-                this.xAxisLabels.push(lastLabel);
-            }
-        }
-
-        // Limit to 6 to prevent overcrowding
-        if (this.xAxisLabels.length > 7) {
-            // If too many, just take first, middle, last etc. 
-            // Simplification: just slice or filter. 
-        }
-
 
         // --- 3. Generate Grid/Path ---
-        this.pointWidth = width / Math.max(buckets.length - 1, 1);
-
         this.chartPoints = [];
         const pathPoints: string[] = [];
 
-        buckets.forEach((b, i) => {
+        buckets.forEach((b) => {
             if (!b.utc) return;
-
-            // X Position: Distribution along width
-            const x = (i / (buckets.length - 1)) * width;
+            // X Position: Time-based
+            const timeOffset = b.utc - startTime;
+            // Clamp x between 0 and width
+            let x = (timeOffset / timeRange) * width;
+            x = Math.max(0, Math.min(x, width));
 
             // Y Position: Inverted
             const val = b.avg || 0;
             const y = height - ((val / maxVal) * (height - padding));
 
-            // Time Label from UTC
-            const date = new Date(b.utc);
-            // Format: "17:00"
-            const timeLabel = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const timeLabel = new Date(b.utc).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-            // Store Point Data for Hover
             this.chartPoints.push({
-                x,
-                y,
-                value: Math.round(val), // User requested integer count
-                time: timeLabel
+                x, y, value: Math.round(val), time: timeLabel
             });
 
             pathPoints.push(`${x},${y}`);
         });
 
-        if (pathPoints.length === 0) return;
+        // Set Live Line X based on NOW (or last bucket if past)
+        const nowMs = new Date().getTime();
+        const nowOffset = nowMs - startTime;
+        this.liveLineX = (nowOffset / timeRange) * width;
+        // Clamp live line
+        this.liveLineX = Math.max(0, Math.min(this.liveLineX, width));
 
-        if (pathPoints.length === 1) {
-            // If only 1 point, can't draw line. Draw a flat line or single point.
-            const p = pathPoints[0];
-            this.occupancyChartPath = `M0,${p.split(',')[1]} L${width},${p.split(',')[1]}`;
-            this.occupancyFillPath = `${this.occupancyChartPath} L${width},${height} L0,${height} Z`;
-            this.liveLineX = width;
-            return;
-        }
+        if (pathPoints.length === 0) return;
 
         // Create Path
         const startPoint = pathPoints[0].split(',');
@@ -251,15 +239,8 @@ export class Dashboard implements OnInit, OnDestroy {
     }
     crowdEntries: any[] = [];
 
-    // Alerts data (Mock data matching Figma)
-    alerts: any[] = [
-        { date: 'March 03 2025', time: '10:12', name: 'Ahmad Entered', zone: 'Zone A', priority: 'high' },
-        { date: 'March 03 2025', time: '10:12', name: 'Mathew Entered', zone: 'Zone B', priority: 'medium' },
-        { date: 'March 03 2025', time: '10:12', name: 'Rony Entered', zone: 'Zone B', priority: 'high' },
-        { date: 'March 03 2025', time: '10:12', name: 'Rony Entered', zone: 'Zone B', priority: 'low' },
-        { date: 'March 03 2025', time: '10:12', name: 'Rony Entered', zone: 'Zone B', priority: 'low' },
-        { date: 'March 03 2025', time: '10:12', name: 'Rony Entered', zone: 'Zone B', priority: 'high' }
-    ];
+
+
     selectedAlert: any = null; // Track selected alert for formatting
     private subscriptions: Subscription = new Subscription();
 
@@ -297,8 +278,21 @@ export class Dashboard implements OnInit, OnDestroy {
             next: (data) => {
                 console.log('Occupancy API Data:', data);
                 if (data.buckets && Array.isArray(data.buckets) && data.buckets.length > 0) {
-                    const lastBucket = data.buckets[data.buckets.length - 1];
-                    this.liveOccupancy = Math.round(lastBucket.avg || lastBucket.max || lastBucket.count || 0);
+                    // Find the bucket corresponding to the CURRENT time (not the end of the day)
+                    const now = new Date().getTime();
+                    let currentBucket = data.buckets[0];
+
+                    for (const b of data.buckets) {
+                        // Check if bucket time is past or present
+                        if (b.utc <= now) {
+                            currentBucket = b;
+                        } else {
+                            // Bucket is in future, stop searching
+                            break;
+                        }
+                    }
+
+                    this.liveOccupancy = Math.round(currentBucket.avg || currentBucket.max || currentBucket.count || 0);
 
                     // Generate Chart
                     this.occupancyBuckets = data.buckets || [];
