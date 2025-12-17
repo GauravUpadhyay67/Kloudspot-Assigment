@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, timeout } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
@@ -22,7 +22,8 @@ export class AuthService {
                 if (token) {
                     localStorage.setItem(this.tokenKey, token);
                 }
-            })
+            }),
+            timeout(60000) // 1 minute timeout for slow backend
         );
     }
 

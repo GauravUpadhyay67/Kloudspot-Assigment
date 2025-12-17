@@ -2,6 +2,16 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import {
+    ApexAnnotations,
+    ApexAxisChartSeries,
+    ApexChart,
+    ApexFill,
+    ApexNonAxisChartSeries,
+    ApexStroke,
+    ApexXAxis,
+    NgApexchartsModule
+} from 'ng-apexcharts';
 import { Subscription } from 'rxjs';
 import { AnalyticsService } from '../services/analytics.service';
 import { AuthService } from '../services/auth.service';
@@ -9,7 +19,7 @@ import { SocketService } from '../services/socket.service';
 
 @Component({
     selector: 'app-dashboard',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, NgApexchartsModule],
     templateUrl: './dashboard.html',
     styleUrl: './dashboard.css',
 })
@@ -20,6 +30,7 @@ export class Dashboard implements OnInit, OnDestroy {
     showProfile = false;
     unreadAlerts = false;
     isSidebarOpen = false;
+    isCollapsed = false;
 
     // Dropdown Logic
     locations = ['Avenue Mall', 'City Center', 'Marina Plaza'];
@@ -38,7 +49,11 @@ export class Dashboard implements OnInit, OnDestroy {
     }
 
     toggleSidebar() {
-        this.isSidebarOpen = !this.isSidebarOpen;
+        if (window.innerWidth >= 1024) {
+            this.isCollapsed = !this.isCollapsed;
+        } else {
+            this.isSidebarOpen = !this.isSidebarOpen;
+        }
     }
 
     // Data properties
@@ -50,112 +65,262 @@ export class Dashboard implements OnInit, OnDestroy {
     dwellTimeTrend = '0% vs yesterday';
 
     // Chart properties
-    occupancyChartPath = '';
-    occupancyFillPath = '';
-    liveLineX = -1;
-    pointWidth = 20;
-    chartPoints: any[] = [];
-    hoveredPoint: any = null;
-    xAxisLabels: string[] = [];
-    yAxisMax: number = 250;
-    yAxisLabels: number[] = [];
+    // Chart.js Properties
+    // ApexCharts Properties
+    public chartSeries: ApexAxisChartSeries = [];
+    public chartDetails: ApexChart = {
+        type: 'area', // Changed to Area to match Demographics
+        height: 350,
+        toolbar: { show: false },
+        zoom: { enabled: false }
+    };
+    public chartStroke: ApexStroke = {
+        curve: 'smooth',
+        width: 3 // Reduced slightly to match Demographics
+    };
+    public chartFill: ApexFill = {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.9,
+            stops: [0, 90, 100]
+        }
+    };
+    public chartColors = ['#6FCF97']; // Figma Green
+    public chartDataLabels: ApexDataLabels = { enabled: false };
+    public chartGrid: ApexGrid = {
+        strokeDashArray: 4,
+        borderColor: '#e0e0e0',
+        yaxis: { lines: { show: true } },
+        xaxis: { lines: { show: false } }
+    };
+    public chartXAxis: ApexXAxis = {
+        title: { text: "Time", style: { color: '#6c757d', fontSize: '12px', fontFamily: 'Helvetica, Arial, sans-serif' } },
+        categories: [],
+        tickAmount: 8,
+        labels: {
+            rotate: 0,
+            style: {
+                colors: '#6c757d',
+                fontSize: '12px',
+                fontFamily: 'Helvetica, Arial, sans-serif'
+            }
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        tooltip: { enabled: false }
+    };
+    public chartYAxis: ApexYAxis = {
+        title: { text: "Count", rotate: -90, style: { color: '#6c757d', fontSize: '12px', fontFamily: 'Helvetica, Arial, sans-serif' } },
+        tickAmount: 5,
+        labels: {
+            style: {
+                colors: '#6c757d',
+                fontSize: '12px',
+                fontFamily: 'Helvetica, Arial, sans-serif'
+            },
+            formatter: (val) => Math.floor(val).toString() // Integers only
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+    };
+    public chartAnnotations: ApexAnnotations = {};
+    public lineChartLegend = false;
     occupancyBuckets: any[] = [];
+
+
+    // Demographics Chart Properties
+    public demographicsChartSeries: ApexAxisChartSeries = [];
+    public demographicsChartDetails: ApexChart = {
+        type: 'area', // Changed to Area as requested
+        height: 200, // Adjusted height
+        toolbar: { show: false },
+        zoom: { enabled: false }
+    };
+    public demographicsChartStroke: ApexStroke = {
+        curve: 'smooth',
+        width: 3
+    };
+    public demographicsChartFill: ApexFill = {
+        type: 'solid',
+        opacity: 0.3 // Light fill for area
+    };
+    public demographicsChartDataLabels: ApexDataLabels = { enabled: false };
+    public demographicsChartColors = ['#2D9CDB', '#6FCF97']; // Male (Blue), Female (Green)
+
+    // Reuse X-Axis config concept (Simple hours, no rotation)
+    public demographicsChartXAxis: ApexXAxis = {
+        title: { text: "Time", style: { color: '#6c757d', fontSize: '12px', fontFamily: 'Helvetica, Arial, sans-serif' } },
+        categories: [],
+        tickAmount: 6,
+        labels: {
+            rotate: 0,
+            style: {
+                colors: '#6c757d',
+                fontSize: '12px',
+                fontFamily: 'Helvetica, Arial, sans-serif'
+            }
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        tooltip: { enabled: false }
+    };
+
+    // Reuse Y-Axis config concept (Steps of 50, integers)
+    public demographicsChartYAxis: ApexYAxis = {
+        title: { text: "Count", rotate: -90, style: { color: '#6c757d', fontSize: '12px', fontFamily: 'Helvetica, Arial, sans-serif' } },
+        tickAmount: 5,
+        labels: {
+            style: {
+                colors: '#6c757d',
+                fontSize: '12px',
+                fontFamily: 'Helvetica, Arial, sans-serif'
+            },
+            formatter: (val) => Math.floor(val).toString()
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+    };
+    public demographicsChartGrid: ApexGrid = {
+        strokeDashArray: 4,
+        borderColor: '#e0e0e0',
+        yaxis: { lines: { show: true } },
+        xaxis: { lines: { show: false } }, // Match Overall Occupancy grid
+        padding: { top: 0, right: 0, bottom: 0, left: 10 }
+    };
+    public demographicsChartLegend: any = {
+        show: false, // Hidden to avoid duplication with custom header
+        position: 'top',
+        horizontalAlign: 'right',
+        markers: { radius: 12 },
+        itemMargin: { horizontal: 10, vertical: 0 }
+    };
+
+    // Donut Chart Properties
+    public donutChartSeries: ApexNonAxisChartSeries = [50, 50]; // Default
+    public donutChartDetails: ApexChart = {
+        type: 'donut',
+        height: 200 // Reduced from 250 to 200 to fit better
+    };
+    public donutChartLabels = ['Male', 'Female'];
+    public donutChartColors = ['#2D9CDB', '#6FCF97']; // Figma Blue, Green
+    public donutChartDataLabels: ApexDataLabels = { enabled: false };
+    public donutChartLegend: any = { show: false }; // Hide or position right as requested
+    public donutChartPlotOptions: any = {
+        pie: {
+            donut: {
+                labels: {
+                    show: true,
+                    total: {
+                        show: true,
+                        label: 'Total Crowd',
+                        fontSize: '16px',
+                        fontFamily: 'Helvetica, Arial, sans-serif',
+                        color: '#828282',
+                        formatter: function (w: any) {
+                            const total = w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0);
+                            return Math.round(total).toString(); // Round to integer
+                        }
+                    },
+                    value: {
+                        fontSize: '24px',
+                        fontWeight: 700,
+                        color: '#333',
+                        offsetY: 5
+                    }
+                }
+            }
+        }
+    };
 
     // ...
 
     generateOccupancyChart(buckets: any[]) {
-        if (!buckets || buckets.length === 0) return;
-
-        const width = 800;
-        const height = 200;
-        const padding = 20;
-
-        // Time Range: Use TODAY'S 00:00 to 24:00 Range
-        // This ensures that even if API returns previous day's data (yesterday 22:00), 
-        // the graph correctly aligns to the Current Day view.
-        const now = new Date();
-        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime();
-        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime();
-        const timeRange = endTime - startTime;
-
-        // --- 1. Calculate Y-Axis (Count) ---
-        const dataMax = Math.max(...buckets.map(b => b.avg || 0));
-        let maxVal = Math.max(dataMax, 50);
-        maxVal = Math.ceil(maxVal / 50) * 50;
-        this.yAxisMax = maxVal;
-
-        // Labels
-        this.yAxisLabels = [];
-        const steps = 5;
-        for (let i = steps; i >= 0; i--) {
-            this.yAxisLabels.push(Math.round((maxVal / steps) * i));
+        if (!buckets || buckets.length === 0) {
+            // Clear chart if no data
+            this.chartSeries = [{ name: "Occupancy", data: [] }];
+            this.chartXAxis = { ...this.chartXAxis, categories: [] };
+            this.cdr.detectChanges();
+            return;
         }
 
-        // --- 2. Calculate X-Axis (Fixed 6 labels: 00:00, 04:00, ... 20:00) ---
-        this.xAxisLabels = [];
-        for (let i = 0; i <= 24; i += 4) {
-            this.xAxisLabels.push(`${i.toString().padStart(2, '0')}:00`);
+        // ApexCharts Implementation with Flexible Mapping
+        const labels: string[] = [];
+        const data: number[] = [];
+
+        buckets.forEach(b => {
+            // Try multiple keys for timestamp
+            const timeVal = b.bucketStartTime || b.timestamp || b.time || b.utc;
+            if (timeVal) {
+                // Format as simple hour (e.g. "8:00")
+                const date = new Date(timeVal);
+                const label = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                labels.push(label);
+            } else {
+                labels.push('--');
+            }
+
+            // Try multiple keys for occupancy value
+            const val = b.occupancy || b.count || b.avg || 0;
+            data.push(val);
+        });
+
+        // Force update series
+        this.chartSeries = [{
+            name: "Occupancy",
+            data: data
+        }];
+
+        // Force update X-axis
+        this.chartXAxis = {
+            categories: labels,
+            title: { text: "Time", style: { color: '#9aa0ac', fontSize: '12px' } },
+            tickAmount: 8,
+            labels: {
+                rotate: 0,
+                style: {
+                    colors: '#9aa0ac',
+                    fontSize: '12px',
+                    fontFamily: 'Helvetica, Arial, sans-serif'
+                }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            tooltip: { enabled: false }
+        };
+
+        // Live Annotation
+        const currentLabelIndex = labels.length - 1;
+        if (currentLabelIndex >= 0) {
+            this.chartAnnotations = {
+                xaxis: [
+                    {
+                        x: labels[currentLabelIndex],
+                        borderColor: '#EB5757',
+                        strokeDashArray: 4,
+                        label: {
+                            borderColor: '#EB5757',
+                            style: {
+                                color: '#fff',
+                                background: '#EB5757',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                            },
+                            text: 'LIVE',
+                            offsetY: -10
+                        }
+                    }
+                ]
+            };
         }
 
-        // --- 3. Generate Grid/Path ---
-        this.chartPoints = [];
-        const pathPoints: string[] = [];
-        const nowMs = new Date().getTime();
+        // Ensure dataLabels disabled
+        this.chartDataLabels = { enabled: false };
 
-        // Filter buckets to only show data up to NOW
-        const validBuckets = buckets.filter(b => b.utc <= nowMs);
-
-        validBuckets.forEach((b) => {
-            if (!b.utc) return;
-            // X Position: Time-based
-            const timeOffset = b.utc - startTime;
-            // Clamp x between 0 and width
-            let x = (timeOffset / timeRange) * width;
-            x = Math.max(0, Math.min(x, width));
-
-            // Y Position: Inverted
-            const val = b.avg || 0;
-            const y = height - ((val / maxVal) * (height - padding));
-
-            const timeLabel = new Date(b.utc).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-            this.chartPoints.push({
-                x, y, value: Math.round(val), time: timeLabel
-            });
-
-            pathPoints.push(`${x},${y}`);
-        });
-
-        // Set Live Line X based on NOW (or last bucket if past)
-        // nowMs is already defined above
-        const nowOffset = nowMs - startTime;
-        this.liveLineX = (nowOffset / timeRange) * width;
-        // Clamp live line
-        this.liveLineX = Math.max(0, Math.min(this.liveLineX, width));
-
-        // [Fix] Add the "Live" point to the path so it touches the red line
-        const liveY = height - ((this.liveOccupancy / maxVal) * (height - padding));
-        pathPoints.push(`${this.liveLineX},${liveY}`);
-        this.chartPoints.push({
-            x: this.liveLineX,
-            y: liveY,
-            value: this.liveOccupancy,
-            time: 'Live'
-        });
-
-        if (pathPoints.length === 0) return;
-
-        // Create Path
-        const startPoint = pathPoints[0].split(',');
-        this.occupancyChartPath = `M${startPoint[0]},${startPoint[1]} ` + pathPoints.slice(1).map(p => `L${p}`).join(' ');
-
-        // Create Fill
-        const firstX = pathPoints[0].split(',')[0];
-        const lastPointX = pathPoints[pathPoints.length - 1].split(',')[0];
-        this.occupancyFillPath = `${this.occupancyChartPath} L${lastPointX},${height} L${firstX},${height} Z`;
-
-
+        this.cdr.detectChanges();
     }
+
     userProfile = {
         name: 'Admin User',
         email: 'admin@kloudspot.com',
@@ -166,12 +331,12 @@ export class Dashboard implements OnInit, OnDestroy {
     malePercentage = 50;
     femalePercentage = 50;
     donutStrokeDash = '0 440'; // Init empty
-    maleTrendPath = '';
-    femaleTrendPath = '';
 
     // ...
 
     updateDemographics(data: any) {
+        console.log('Demographics API Response:', data); // Debug Log
+
         let male = 0;
         let female = 0;
         let buckets: any[] = [];
@@ -185,20 +350,21 @@ export class Dashboard implements OnInit, OnDestroy {
             female = data.female || 0;
         } else if (data.buckets && Array.isArray(data.buckets)) {
             buckets = data.buckets;
-            // If time-series, take the latest bucket or average
-            const latest = data.buckets[data.buckets.length - 1];
-            if (latest) {
-                male = latest.male || 0;
-                female = latest.female || 0;
-            }
+            // Summing Logic: If the API only provides time-based buckets, sum them up
+            male = Math.round(data.buckets.reduce((acc: number, b: any) => acc + (b.maleCount || b.male || 0), 0));
+            female = Math.round(data.buckets.reduce((acc: number, b: any) => acc + (b.femaleCount || b.female || 0), 0));
         }
 
         const total = male + female;
+
+        // Update Donut Chart Series
         if (total > 0) {
+            this.donutChartSeries = [male, female];
+            // Calculate percentages for custom legend
             this.malePercentage = Math.round((male / total) * 100);
             this.femalePercentage = Math.round((female / total) * 100);
         } else {
-            // Default 50/50 if no data
+            this.donutChartSeries = [0, 0];
             this.malePercentage = 50;
             this.femalePercentage = 50;
         }
@@ -207,50 +373,81 @@ export class Dashboard implements OnInit, OnDestroy {
         const strokeLength = (this.femalePercentage / 100) * circumference;
         this.donutStrokeDash = `${strokeLength} ${circumference}`;
 
-        // Generate Trend Lines
+        // Generate ApexCharts Series
         if (buckets.length > 0) {
-            this.generateDemographicsTrend(buckets);
+            const labels: string[] = [];
+            const maleData: number[] = [];
+            const femaleData: number[] = [];
+
+            buckets.forEach(b => {
+                const timeVal = b.bucketStartTime || b.timestamp || b.time || b.utc;
+                if (timeVal) {
+                    const date = new Date(timeVal);
+                    // Simple hour format for X-axis
+                    let label = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    labels.push(label);
+                } else {
+                    labels.push('--');
+                }
+
+                maleData.push(b.maleCount || b.male || 0);
+                femaleData.push(b.femaleCount || b.female || 0);
+            });
+
+            this.demographicsChartSeries = [
+                { name: 'Male', data: maleData },
+                { name: 'Female', data: femaleData }
+            ];
+
+            this.demographicsChartXAxis = {
+                ...this.demographicsChartXAxis,
+                categories: labels
+            };
         } else {
-            // Fallback flat line if no time series
-            this.maleTrendPath = 'M0,120 L400,120';
-            this.femaleTrendPath = 'M0,90 L400,90';
+            // Clear chart if no data
+            this.demographicsChartSeries = [];
+            this.demographicsChartXAxis = {
+                ...this.demographicsChartXAxis,
+                categories: []
+            };
         }
     }
 
-    generateDemographicsTrend(buckets: any[]) {
-        const width = 400;
-        const height = 150;
-        const padding = 10;
 
-        // Find max value across both
-        const maxVal = Math.max(
-            ...buckets.map(b => b.male || 0),
-            ...buckets.map(b => b.female || 0),
-            10 // Min scale
-        );
-
-        const malePoints: string[] = [];
-        const femalePoints: string[] = [];
-
-        buckets.forEach((b, i) => {
-            if (!b.utc) return;
-
-            const x = (i / (buckets.length - 1)) * width;
-
-            // Invert Y
-            const yMale = height - (((b.male || 0) / maxVal) * (height - padding * 2)) - padding;
-            const yFemale = height - (((b.female || 0) / maxVal) * (height - padding * 2)) - padding;
-
-            malePoints.push(`${x},${yMale}`);
-            femalePoints.push(`${x},${yFemale}`);
-        });
-
-        if (malePoints.length > 0) {
-            this.maleTrendPath = `M${malePoints[0]} ` + malePoints.slice(1).map(p => `L${p}`).join(' ');
-            this.femaleTrendPath = `M${femalePoints[0]} ` + femalePoints.slice(1).map(p => `L${p}`).join(' ');
-        }
-    }
     crowdEntries: any[] = [];
+
+    // Pagination Controls
+    currentPage = 1;
+    itemsPerPage = 15; // User requested 15
+
+    get totalPages(): number {
+        return Math.ceil(this.crowdEntries.length / this.itemsPerPage) || 1;
+    }
+
+    get paginatedEntries(): any[] {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        return this.crowdEntries.slice(start, start + this.itemsPerPage);
+    }
+
+    get pagesArray(): number[] {
+        return Array.from({ length: this.totalPages }, (_, i) => i + 1).slice(0, 5); // Limit to 5 for now
+    }
+
+    nextPage() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+        }
+    }
+
+    prevPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+        }
+    }
+
+    goToPage(p: number) {
+        this.currentPage = p;
+    }
 
 
 
@@ -287,32 +484,49 @@ export class Dashboard implements OnInit, OnDestroy {
 
     fetchDashboardData() {
         // Fetch Occupancy
+        // Fetch Occupancy
         this.analyticsService.getOverallOccupancy().subscribe({
             next: (data) => {
-                console.log('Occupancy API Data:', data);
-                if (data.buckets && Array.isArray(data.buckets) && data.buckets.length > 0) {
+                console.log('Occupancy API Response:', data); // Debug Log
+
+                let buckets: any[] = [];
+
+                if (Array.isArray(data)) {
+                    // Case 1: API returns array directly
+                    buckets = data;
+                } else if (data.buckets && Array.isArray(data.buckets)) {
+                    // Case 2: API returns { buckets: [...] }
+                    buckets = data.buckets;
+                }
+
+                if (buckets.length > 0) {
                     // Find the bucket corresponding to the CURRENT time (not the end of the day)
                     const now = new Date().getTime();
-                    let currentBucket = data.buckets[0];
+                    let currentBucket = buckets[0];
 
-                    for (const b of data.buckets) {
+                    // Sort if needed, but assuming sorted
+                    for (const b of buckets) {
                         // Check if bucket time is past or present
-                        if (b.utc <= now) {
+                        // Use flexible key access
+                        const timeVal = b.bucketStartTime || b.timestamp || b.time || b.utc;
+                        if (timeVal && timeVal <= now) {
                             currentBucket = b;
-                        } else {
-                            // Bucket is in future, stop searching
-                            break;
                         }
                     }
 
-                    this.liveOccupancy = Math.round(currentBucket.avg || currentBucket.max || currentBucket.count || 0);
+                    // Flexible Occupancy Value
+                    this.liveOccupancy = Math.round(currentBucket.avg || currentBucket.max || currentBucket.count || currentBucket.occupancy || 0);
 
                     // Generate Chart
-                    this.occupancyBuckets = data.buckets || [];
+                    this.occupancyBuckets = buckets;
                     this.generateOccupancyChart(this.occupancyBuckets);
-                } else {
+                } else if (data.occupancy !== undefined) {
+                    // Case 3: API returns { occupancy: 123 } (Live only)
                     this.liveOccupancy = data.occupancy || 0;
+                    // Pass empty or single point? Pass [] to clear chart or single point
+                    this.generateOccupancyChart([]);
                 }
+
                 this.cdr.detectChanges();
             },
             error: (err) => {
@@ -370,16 +584,16 @@ export class Dashboard implements OnInit, OnDestroy {
 
         // Fetch Crowd Entries
         // Fetch Crowd Entries
-        this.analyticsService.getCrowdEntries().subscribe(data => {
+        // Fetch Crowd Entries
+        this.analyticsService.getCrowdEntries(1, this.itemsPerPage).subscribe(data => {
             const rawEntries = data.entries || data.records || [];
-
-            // Map API fields which might be (visitor_name, gender, entry_time) to (name, sex, entry)
+            // Map API fields based on user provided keys
             this.crowdEntries = rawEntries.map((r: any) => ({
-                name: r.visitor_name || r.visitorName || r.name || 'Unknown',
-                sex: r.gender || r.sex || '-',
-                entry: this.formatTime(r.entry_time || r.entryTime || r.entry),
-                exit: this.formatTime(r.exit_time || r.exitTime || r.exit),
-                dwellTime: r.dwell_time || r.dwellTime || '--',
+                name: r.personName || r.name || 'Unknown',
+                sex: (r.gender || r.sex || '-').charAt(0).toUpperCase() + (r.gender || r.sex || '-').slice(1),
+                entry: this.formatTime(r.entryLocal || r.entry),
+                exit: this.formatTime(r.exitLocal || r.exit),
+                dwellTime: this.formatDwellTime(r.dwellMinutes !== undefined ? r.dwellMinutes : r.dwellTime),
                 ...r
             }));
 
@@ -387,13 +601,50 @@ export class Dashboard implements OnInit, OnDestroy {
         });
     }
 
+    private formatDwellTime(minutes: any): string {
+        if (minutes === undefined || minutes === null || minutes === '--') return '--';
+
+        const num = Number(minutes);
+        if (isNaN(num)) return String(minutes);
+
+        const h = Math.floor(num / 60);
+        const m = Math.round(num % 60);
+
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
     private formatTime(val: any): string {
         if (!val) return '--';
+
+        // 1. Handle numeric timestamp (milliseconds)
         if (!isNaN(val)) {
-            // It's a timestamp
             const date = new Date(Number(val));
-            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
+
+        // 2. Handle string formats
+        if (typeof val === 'string') {
+            // Case A: "DD/MM/YYYY HH:mm:ss" (e.g. "17/12/2025 13:18:34")
+            // Regex to capture time part HH:mm:ss
+            // Matches: 17/12/2025 13:18:34
+            const dMyMatch = val.match(/\d{1,2}\/\d{1,2}\/\d{4}\s+(\d{1,2}):(\d{1,2})(?::\d{1,2})?/);
+            if (dMyMatch) {
+                let hours = parseInt(dMyMatch[1], 10);
+                const minutes = parseInt(dMyMatch[2], 10);
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // the hour '0' should be '12'
+                const strMinutes = minutes < 10 ? '0' + minutes : minutes;
+                return `${hours.toString().padStart(2, '0')}:${strMinutes} ${ampm}`;
+            }
+
+            // Case B: ISO string or parsable date string
+            const date = new Date(val);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            }
+        }
+
         return val;
     }
 
@@ -401,16 +652,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
 
 
-    showTooltip(point: any) {
-        console.log('Hovering point:', point);
-        this.hoveredPoint = point;
-        this.cdr.detectChanges(); // Force render
-    }
 
-    hideTooltip() {
-        this.hoveredPoint = null;
-        this.cdr.detectChanges();
-    }
 
     setupRealtimeUpdates() {
         // Listen for live occupancy updates
@@ -429,6 +671,8 @@ export class Dashboard implements OnInit, OnDestroy {
                 // Add to buckets and regenerate
                 // (Optional: Limit to last N points to avoid memory leak if running for days)
                 this.occupancyBuckets.push(newPoint);
+
+                // Regenerate Chart.js Data
                 this.generateOccupancyChart(this.occupancyBuckets);
                 this.cdr.detectChanges();
             }
@@ -442,68 +686,15 @@ export class Dashboard implements OnInit, OnDestroy {
         }));
     }
 
-    // Pagination properties
-    currentPage = 1;
-    itemsPerPage = 10;
-    totalItems = 0;
+
 
     // ... (rest of methods)
 
     switchView(view: 'overview' | 'entries') {
         this.currentView = view;
         if (view === 'entries') {
-            this.loadEntries(1);
+            this.currentPage = 1;
         }
-    }
-
-    loadEntries(page: number) {
-        this.currentPage = page;
-        this.analyticsService.getCrowdEntries(page, this.itemsPerPage).subscribe({
-            next: (data) => {
-                console.log('Entries API Data:', data);
-
-                // Correctly map from 'records' based on user JSON
-                let rawEntries = data.records || [];
-
-                // Enforce Descending Order (Newest First) as properly shown in Figma/Screenshot
-                rawEntries.sort((a: any, b: any) => (b.entryUtc || 0) - (a.entryUtc || 0));
-
-                this.totalItems = data.totalRecords || 0;
-
-                // Fallback if empty - REMOVED MOCK DATA as requested
-                if (rawEntries.length === 0) {
-                    // Do nothing, let it be empty
-                }
-
-                this.crowdEntries = rawEntries.map((e: any, index: number) => ({
-                    id: e.personId || index,
-                    name: e.personName || 'Unknown', // Use personName from API
-                    // Sex is not in API, randomize for UI demo
-                    sex: Math.random() > 0.5 ? 'Male' : 'Female',
-                    // Parse UTC or Local
-                    entry: this.formatTime(e.entryUtc),
-                    exit: e.exitUtc ? this.formatTime(e.exitUtc) : '--',
-                    dwellTime: e.dwellMinutes ? Math.round(e.dwellMinutes) + ' min' : '--',
-                    profilePic: null
-                }));
-
-                this.cdr.detectChanges();
-            },
-            error: (err) => {
-                console.error('Entries API Error:', err);
-                const mockData = this.generateMockEntries(this.itemsPerPage);
-                this.crowdEntries = mockData.map((e: any, index: number) => ({
-                    id: index,
-                    name: e.visitor_name || this.getRandomName(index),
-                    sex: 'Male',
-                    entry: this.formatTime(Date.now()),
-                    exit: '--',
-                    dwellTime: '15 min',
-                    profilePic: null
-                }));
-                this.cdr.detectChanges();
-            }
-        });
     }
 
     private generateMockEntries(count: number): any[] {
@@ -523,39 +714,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
 
 
-    get totalPages(): number {
-        return Math.ceil(this.totalItems / this.itemsPerPage);
-    }
 
-    nextPage() {
-        if (this.currentPage < this.totalPages) {
-            this.loadEntries(this.currentPage + 1);
-        }
-    }
-
-    prevPage() {
-        if (this.currentPage > 1) {
-            this.loadEntries(this.currentPage - 1);
-        }
-    }
-
-    goToPage(page: number) {
-        this.loadEntries(page);
-    }
-
-    get pagesArray(): number[] {
-        // Simple range, can be improved for large numbers
-        const total = this.totalPages;
-        const visible = 5;
-        let start = Math.max(1, this.currentPage - 2);
-        let end = Math.min(total, start + visible - 1);
-
-        if (end - start < visible - 1) {
-            start = Math.max(1, end - visible + 1);
-        }
-
-        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    }
 
     toggleAlerts() {
         this.showAlerts = !this.showAlerts;

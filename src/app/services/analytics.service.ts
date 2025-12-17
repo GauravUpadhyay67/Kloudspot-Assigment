@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, retry } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 
 
 @Injectable({
@@ -42,7 +42,7 @@ export class AnalyticsService {
             granularity: '15m',
             ...additionalParams
         }).pipe(
-            retry({ count: 3, delay: 3000 }) // Retry 3 times with 3s delay
+            timeout(60000) // Fail after 60 seconds since login took ~24s
         );
     }
 
