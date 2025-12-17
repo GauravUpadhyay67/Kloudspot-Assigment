@@ -37,7 +37,9 @@
             <div *ngIf="errorMessage" class="error-message">
               {{ errorMessage }}
             </div>
-            <button type="submit" class="login-btn" (click)="onLogin()">Login</button>
+            <button type="submit" class="login-btn" (click)="onLogin()" [disabled]="isLoading" [style.opacity]="isLoading ? '0.7' : '1'" [style.cursor]="isLoading ? 'not-allowed' : 'pointer'">
+              {{ isLoading ? 'Logging in...' : 'Login' }}
+            </button>
           </form>
         </div>
       </div>

@@ -23,6 +23,7 @@
   "private": true,
   "packageManager": "npm@11.6.1",
   "dependencies": {
+    "@angular/animations": "^21.0.5",
     "@angular/common": "^21.0.0",
     "@angular/compiler": "^21.0.0",
     "@angular/core": "^21.0.0",
@@ -33,6 +34,7 @@
     "chart.js": "^4.5.1",
     "ng-apexcharts": "^2.0.4",
     "ng2-charts": "^8.0.0",
+    "ngx-spinner": "^19.0.0",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.8.1",
     "tslib": "^2.3.0"

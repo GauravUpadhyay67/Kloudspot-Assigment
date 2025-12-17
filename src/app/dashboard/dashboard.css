@@ -788,6 +788,7 @@
 }
 
 /* Alerts Panel */
+/* Alerts Panel */
 .alerts-panel {
   position: fixed;
   top: 0;
@@ -801,6 +802,121 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
+}
+
+.alerts-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #E5E7EB;
+  background: white;
+}
+
+.alerts-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6B7280;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #111827;
+}
+
+.alerts-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #FFFFFF;
+}
+
+/* Alert Card Style */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px; 
+  border-radius: 12px;
+  background: #FFFFFF;
+  margin-bottom: 12px; 
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #F3F4F6; 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Card shadow */
+}
+
+/* Selected State - Figma Match */
+.alert-item.selected {
+  background-color: #F8FCFF; 
+  border: 1px solid #CDE9FF; 
+  border-left: 4px solid #2F80ED; 
+  box-shadow: none; 
+}
+
+.alert-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-meta {
+  font-size: 11px;
+  color: #828282; 
+  font-weight: 500;
+}
+
+.alert-main {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.alert-zone-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #4F4F4F;
+  margin-top: 2px;
+}
+
+.alert-status {
+  align-self: flex-end; 
+  margin-top: auto; 
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .alerts-panel.show {

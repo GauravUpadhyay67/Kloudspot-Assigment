@@ -1,13 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, timeout } from 'rxjs';
-
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AnalyticsService {
-    private baseUrl = '/api/analytics';
+    private baseUrl = environment.apiUrl;
 
     constructor(private http: HttpClient) { }
 
@@ -33,7 +33,7 @@ export class AnalyticsService {
         const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
 
         // Correct Site ID for Dubai Mall
-        const siteId = '8bd0d580-fdac-44a4-a6e4-367253099c4e';
+        const siteId = environment.siteId;
 
         return this.http.post<any>(`${this.baseUrl}/${endpoint}`, {
             siteId: siteId,

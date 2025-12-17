@@ -12,25 +12,90 @@ import {
     ApexXAxis,
     NgApexchartsModule
 } from 'ng-apexcharts';
-import { Subscription } from 'rxjs';
+import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { AnalyticsService } from '../services/analytics.service';
 import { AuthService } from '../services/auth.service';
 import { SocketService } from '../services/socket.service';
 
 @Component({
     selector: 'app-dashboard',
-    imports: [CommonModule, FormsModule, NgApexchartsModule],
+    standalone: true,
+    imports: [CommonModule, FormsModule, NgApexchartsModule, NgxSpinnerModule],
     templateUrl: './dashboard.html',
-    styleUrl: './dashboard.css',
+    styleUrl: './dashboard.css'
 })
 export class Dashboard implements OnInit, OnDestroy {
     currentView: 'overview' | 'entries' = 'overview';
     showAlerts = false;
-    alerts: any[] = [];
+    alerts: any[] = [
+        {
+            name: 'Ahmad',
+            action: 'Entered',
+            zone: 'Zone A',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'high',
+            avatar: 'A',
+            avatarColor: '#2F80ED' // Blue
+        },
+        {
+            name: 'Mathew',
+            action: 'Entered',
+            zone: 'Zone A',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'medium',
+            avatar: 'M',
+            avatarColor: '#9B51E0' // Purple
+        },
+        {
+            name: 'Rony',
+            action: 'Entered',
+            zone: 'Zone b',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'low',
+            avatar: 'R',
+            avatarColor: '#F2994A' // Orange
+        },
+        {
+            name: 'Rony',
+            action: 'Entered',
+            zone: 'Zone b',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'low',
+            avatar: 'R',
+            avatarColor: '#F2994A' // Orange
+        },
+        {
+            name: 'Rony',
+            action: 'Entered',
+            zone: 'Zone b',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'high',
+            avatar: 'R',
+            avatarColor: '#F2994A' // Orange
+        },
+        {
+            name: 'Rony',
+            action: 'Entered',
+            zone: 'Zone b',
+            date: 'March 03 2025',
+            time: '10:12',
+            priority: 'high',
+            avatar: 'R',
+            avatarColor: '#F2994A' // Orange
+        }
+    ];
     showProfile = false;
     unreadAlerts = false;
     isSidebarOpen = false;
     isCollapsed = false;
+    // serverUnreachable = false; // Removed
 
     // Dropdown Logic
     locations = ['Avenue Mall', 'City Center', 'Marina Plaza'];
@@ -291,8 +356,23 @@ export class Dashboard implements OnInit, OnDestroy {
         };
 
         // Live Annotation
-        const currentLabelIndex = labels.length - 1;
-        if (currentLabelIndex >= 0) {
+        // Find the index of the bucket closest to 'now'
+        const now = new Date().getTime();
+        let currentLabelIndex = -1;
+        let minDiff = Number.MAX_VALUE;
+
+        buckets.forEach((b, index) => {
+            const t = b.bucketStartTime || b.timestamp || b.time || b.utc;
+            if (t) {
+                const diff = Math.abs(now - t);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    currentLabelIndex = index;
+                }
+            }
+        });
+
+        if (currentLabelIndex >= 0 && currentLabelIndex < labels.length) {
             this.chartAnnotations = {
                 xaxis: [
                     {
@@ -335,7 +415,7 @@ export class Dashboard implements OnInit, OnDestroy {
     // ...
 
     updateDemographics(data: any) {
-        console.log('Demographics API Response:', data); // Debug Log
+
 
         let male = 0;
         let female = 0;
@@ -459,7 +539,8 @@ export class Dashboard implements OnInit, OnDestroy {
         private analyticsService: AnalyticsService,
         private socketService: SocketService,
         private router: Router,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private spinner: NgxSpinnerService
     ) { }
 
     ngOnInit() {
@@ -483,121 +564,101 @@ export class Dashboard implements OnInit, OnDestroy {
 
 
     fetchDashboardData() {
-        // Fetch Occupancy
-        // Fetch Occupancy
-        this.analyticsService.getOverallOccupancy().subscribe({
-            next: (data) => {
-                console.log('Occupancy API Response:', data); // Debug Log
+        this.spinner.show();
 
-                let buckets: any[] = [];
 
-                if (Array.isArray(data)) {
-                    // Case 1: API returns array directly
-                    buckets = data;
-                } else if (data.buckets && Array.isArray(data.buckets)) {
-                    // Case 2: API returns { buckets: [...] }
-                    buckets = data.buckets;
-                }
+        // 1. Critical Data (Summary Cards) - Controls Global Spinner
+        forkJoin({
+            occupancy: this.analyticsService.getOverallOccupancy().pipe(catchError(err => { console.warn('Occupancy failed', err); return of(null); })),
+            footfall: this.analyticsService.getFootfall().pipe(catchError(err => { console.warn('Footfall failed', err); return of(null); })),
+            dwell: this.analyticsService.getDwellTime().pipe(catchError(err => { console.warn('Dwell failed', err); return of(null); }))
+        }).pipe(
+            finalize(() => {
+                this.spinner.hide();
+            })
+        ).subscribe({
+            next: (results: any) => {
+                // Occupancy Logic
+                if (results.occupancy) {
+                    const data = results.occupancy;
+                    let buckets: any[] = [];
+                    if (Array.isArray(data)) { buckets = data; }
+                    else if (data.buckets && Array.isArray(data.buckets)) { buckets = data.buckets; }
 
-                if (buckets.length > 0) {
-                    // Find the bucket corresponding to the CURRENT time (not the end of the day)
-                    const now = new Date().getTime();
-                    let currentBucket = buckets[0];
-
-                    // Sort if needed, but assuming sorted
-                    for (const b of buckets) {
-                        // Check if bucket time is past or present
-                        // Use flexible key access
-                        const timeVal = b.bucketStartTime || b.timestamp || b.time || b.utc;
-                        if (timeVal && timeVal <= now) {
-                            currentBucket = b;
+                    if (buckets.length > 0) {
+                        const now = new Date().getTime();
+                        let currentBucket = buckets[0];
+                        for (const b of buckets) {
+                            const timeVal = b.bucketStartTime || b.timestamp || b.time || b.utc;
+                            if (timeVal && timeVal <= now) { currentBucket = b; }
                         }
+                        this.liveOccupancy = Math.round(currentBucket.avg || currentBucket.max || currentBucket.count || currentBucket.occupancy || 0);
+                        this.occupancyBuckets = buckets;
+                        this.generateOccupancyChart(this.occupancyBuckets);
+                    } else if (data.occupancy !== undefined) {
+                        this.liveOccupancy = data.occupancy || 0;
+                        this.generateOccupancyChart([]);
                     }
-
-                    // Flexible Occupancy Value
-                    this.liveOccupancy = Math.round(currentBucket.avg || currentBucket.max || currentBucket.count || currentBucket.occupancy || 0);
-
-                    // Generate Chart
-                    this.occupancyBuckets = buckets;
-                    this.generateOccupancyChart(this.occupancyBuckets);
-                } else if (data.occupancy !== undefined) {
-                    // Case 3: API returns { occupancy: 123 } (Live only)
-                    this.liveOccupancy = data.occupancy || 0;
-                    // Pass empty or single point? Pass [] to clear chart or single point
-                    this.generateOccupancyChart([]);
                 }
 
+                // Footfall Logic
+                if (results.footfall) {
+                    const data = results.footfall;
+                    if (data.buckets && Array.isArray(data.buckets)) {
+                        this.todaysFootfall = data.buckets.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
+                    } else {
+                        this.todaysFootfall = data.footfall || data.count || 0;
+                    }
+                }
+
+                // Dwell Logic
+                if (results.dwell) {
+                    const data = results.dwell;
+                    if (data.dwellTime) {
+                        this.avgDwellTime = data.dwellTime;
+                    } else if (data.avgDwellMinutes) {
+                        const totalMinutes = parseFloat(data.avgDwellMinutes);
+                        const minutes = Math.floor(totalMinutes);
+                        const seconds = Math.round((totalMinutes - minutes) * 60);
+                        this.avgDwellTime = `${minutes} min ${seconds} sec`;
+                    } else {
+                        this.avgDwellTime = '--';
+                    }
+                }
                 this.cdr.detectChanges();
             },
             error: (err) => {
-                console.warn('Occupancy API failed, using default', err);
+                console.error('Critical dashboard stats failed', err);
+                this.cdr.detectChanges();
             }
         });
 
-        // Fetch Footfall
-        this.analyticsService.getFootfall().subscribe({
-            next: (data) => {
-                console.log('Footfall API Data:', data);
-                // Check for buckets or direct value
-                if (data.buckets && Array.isArray(data.buckets)) {
-                    // Sum up counts if buckets exist
-                    this.todaysFootfall = data.buckets.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
-                } else {
-                    this.todaysFootfall = data.footfall || data.count || 0;
-                }
-                this.cdr.detectChanges(); // Force UI Update for Footfall
-            },
-            error: (err) => {
-                console.warn('Footfall API failed, using default', err);
-            }
-        });
-
-        // Fetch Dwell Time
-        this.analyticsService.getDwellTime().subscribe(data => {
-            console.log('Dwell API Data:', data);
-
-            if (data.dwellTime) {
-                // Direct mock string support
-                this.avgDwellTime = data.dwellTime;
-            } else if (data.avgDwellMinutes) {
-                const totalMinutes = parseFloat(data.avgDwellMinutes);
-                const minutes = Math.floor(totalMinutes);
-                const seconds = Math.round((totalMinutes - minutes) * 60);
-                this.avgDwellTime = `${minutes} min ${seconds} sec`;
-            } else {
-                this.avgDwellTime = '--';
-            }
-            this.cdr.detectChanges(); // Force UI Update
-        });
-
-        // Fetch Demographics
-        this.analyticsService.getDemographics().subscribe({
-            next: (data) => {
-                console.log('Demographics API Data:', data);
+        // 2. Demographics (Chart) - Loads in background
+        this.analyticsService.getDemographics().pipe(
+            catchError(err => { console.warn('Demographics failed', err); return of(null); })
+        ).subscribe(data => {
+            if (data) {
                 this.updateDemographics(data);
                 this.cdr.detectChanges();
-            },
-            error: (err) => {
-                console.warn('Demographics API failed', err);
             }
         });
 
-        // Fetch Crowd Entries
-        // Fetch Crowd Entries
-        // Fetch Crowd Entries
-        this.analyticsService.getCrowdEntries(1, this.itemsPerPage).subscribe(data => {
-            const rawEntries = data.entries || data.records || [];
-            // Map API fields based on user provided keys
-            this.crowdEntries = rawEntries.map((r: any) => ({
-                name: r.personName || r.name || 'Unknown',
-                sex: (r.gender || r.sex || '-').charAt(0).toUpperCase() + (r.gender || r.sex || '-').slice(1),
-                entry: this.formatTime(r.entryLocal || r.entry),
-                exit: this.formatTime(r.exitLocal || r.exit),
-                dwellTime: this.formatDwellTime(r.dwellMinutes !== undefined ? r.dwellMinutes : r.dwellTime),
-                ...r
-            }));
-
-            this.cdr.detectChanges();
+        // 3. Entries (Table) - Loads in background
+        this.analyticsService.getCrowdEntries(1, this.itemsPerPage).pipe(
+            catchError(err => { console.warn('Entries failed', err); return of(null); })
+        ).subscribe(data => {
+            if (data) {
+                const rawEntries = data.entries || data.records || [];
+                this.crowdEntries = rawEntries.map((r: any) => ({
+                    name: r.personName || r.name || 'Unknown',
+                    sex: (r.gender || r.sex || '-').charAt(0).toUpperCase() + (r.gender || r.sex || '-').slice(1),
+                    entry: this.formatTime(r.entryLocal || r.entry),
+                    exit: this.formatTime(r.exitLocal || r.exit),
+                    dwellTime: this.formatDwellTime(r.dwellMinutes !== undefined ? r.dwellMinutes : r.dwellTime),
+                    ...r
+                }));
+                this.cdr.detectChanges();
+            }
         });
     }
 
@@ -657,7 +718,7 @@ export class Dashboard implements OnInit, OnDestroy {
     setupRealtimeUpdates() {
         // Listen for live occupancy updates
         this.subscriptions.add(this.socketService.onLiveOccupancy().subscribe(data => {
-            console.log('Live Occupancy Update:', data);
+
             if (data && data.occupancy !== undefined) {
                 this.liveOccupancy = data.occupancy;
 
@@ -678,9 +739,16 @@ export class Dashboard implements OnInit, OnDestroy {
             }
         }));
 
+        // Dynamic "Live" Line Update (Every Minute)
+        // This ensures the red dashed line moves forward with time even if no new data comes in
+        const timer = setInterval(() => {
+            this.generateOccupancyChart(this.occupancyBuckets);
+        }, 60000);
+        this.subscriptions.add(new Subscription(() => clearInterval(timer)));
+
         // Listen for alerts
         this.subscriptions.add(this.socketService.onAlert().subscribe(data => {
-            console.log('New Alert:', data);
+
             this.alerts.unshift(data); // Add new alert to top
             this.showAlerts = true; // Auto-show alerts or just badge (logic preference)
         }));
@@ -697,20 +765,7 @@ export class Dashboard implements OnInit, OnDestroy {
         }
     }
 
-    private generateMockEntries(count: number): any[] {
-        return Array.from({ length: count }, (_, i) => ({
-            id: i,
-            visitor_name: this.getRandomName(i),
-            entry_time: Date.now() - (i * 1000 * 60 * 5),
-            dwell_time: Math.floor(Math.random() * 40 + 10)
-        }));
-    }
 
-    // Helper to match Figma design (Mock names if API is anon)
-    private getRandomName(index: number) {
-        const names = ['Alice Johnson', 'Brian Smith', 'Catherine Lee', 'David Brown', 'Eva White', 'Frank Green', 'Grace Taylor', 'Henry Wilson', 'Isabella Martinez', 'Jack Thompson'];
-        return names[index % names.length];
-    }
 
 
 

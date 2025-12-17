@@ -1,7 +1,6 @@
-<div class="dashboard-container">
-  <!-- Mobile Overlay -->
-  <div class="sidebar-overlay" [class.show]="isSidebarOpen" (click)="toggleSidebar()"></div>
 
+
+<div class="dashboard-container">
   <!-- Sidebar -->
   <aside class="sidebar" [class.open]="isSidebarOpen" [class.collapsed]="isCollapsed">
     <div class="sidebar-header">
@@ -302,22 +301,47 @@
         </button>
       </div>
       <div class="alerts-list">
-        <div class="alert-item" *ngFor="let alert of alerts" 
-             (click)="selectAlert(alert)"
-             [class.selected]="selectedAlert === alert">
-          <div class="alert-date">{{ alert.date }} {{ alert.time }}</div>
-          <div class="alert-name">{{ alert.name }}</div>
-          <div class="alert-zone">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-            <span>{{ alert.zone }}</span>
-          </div>
-          <span class="alert-badge" [ngClass]="alert.priority">
-            {{ alert.priority === 'high' ? 'High' : alert.priority === 'medium' ? 'Medium' : 'Low' }}
-          </span>
-        </div>
+         <div class="alert-item" *ngFor="let alert of alerts" 
+              (click)="selectAlert(alert)"
+              [class.selected]="selectedAlert === alert">
+           
+           <!-- Avatar -->
+           <div class="alert-avatar" [style.background-color]="alert.avatarColor || '#E0E0E0'">
+             {{ alert.avatar }}
+           </div>
+
+           <!-- Content -->
+           <div class="alert-content">
+             <!-- Date/Time -->
+             <div class="alert-meta">
+                {{ alert.date }} <span style="margin-left: 6px;">{{ alert.time }}</span>
+             </div>
+             
+             <!-- Name & Action -->
+             <div class="alert-main">
+                <span style="font-weight: 700;">{{ alert.name }}</span> 
+                <span style="margin-left: 4px;">{{ alert.action }}</span>
+             </div>
+
+             <!-- Zone -->
+             <div class="alert-zone-info">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>{{ alert.zone }}</span>
+             </div>
+           </div>
+
+           <!-- Priority Badge -->
+           <div class="alert-status">
+             <span class="badge" [ngClass]="alert.priority"
+                   [style.background-color]="alert.priority === 'high' ? '#EB5757' : alert.priority === 'medium' ? '#F2994A' : '#27AE60'">
+               {{ alert.priority }}
+             </span>
+           </div>
+
+         </div>
       </div>
     </div>
     </div>

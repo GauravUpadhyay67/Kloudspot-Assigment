@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { NgxSpinnerService } from 'ngx-spinner';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -15,8 +16,9 @@ export class Login {
   username = '';
   password = '';
   errorMessage = '';
+  isLoading = false;
 
-  constructor(private router: Router, private authService: AuthService) { }
+  constructor(private router: Router, private authService: AuthService, private spinner: NgxSpinnerService) { }
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -28,11 +30,17 @@ export class Login {
       return;
     }
 
+    this.isLoading = true;
+    this.spinner.show();
     this.authService.login(this.username, this.password).subscribe({
       next: () => {
+        // isLoading remains true during navigation to prevent double clicks
+        // Spinner remains shown until Dashboard hides it (continuous loading experience)
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
+        this.isLoading = false;
+        this.spinner.hide();
         console.error('Login failed', err);
         this.errorMessage = 'Invalid credentials or API error';
       }
