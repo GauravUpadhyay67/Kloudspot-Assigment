@@ -1,67 +1,91 @@
-# Kloudspot Crowd Management System
+# Intelligent Crowd Analytics Dashboard
 
-A unified interface for live crowd occupancy, demographics, and entry/exit monitoring. Built with **Angular 21** and real-time updates via **Socket.IO**.
+![Dashboard Preview](src/assets/preview.png)
 
-## Features
+## Overview
+A high-performance, real-time analytics dashboard designed for monitoring crowd density, demographics, and security alerts. Built with **Angular 19** and **ApexCharts**, this application demonstrates modern frontend architecture, responsive design, and data visualization best practices.
 
--   **Login Screen**: Secure authentication with JWT token management.
--   **Dashboard Overview**:
-    -   Live Occupancy (Real-time updates via Socket.IO)
-    -   Today's Footfall & Average Dwell Time
-    -   Demographic Charts
--   **Real-time Alerts**: Instant notifications for zone activity.
--   **Responsive Design**: Optimized for desktop and tablets.
+**[🚀 View Live Demo](https://kloudspot-assigment.vercel.app/)**
 
-## Tech Stack
+---
 
--   **Frontend**: Angular 21, TypeScript, Vanilla CSS
--   **Real-time**: Socket.IO Client
--   **HTTP**: Angular HttpClient / RxJS
+## ✨ Key Features
 
-## Setup & Run Instructions
+### 📊 Real-Time Visualization
+*   **Live Occupancy**: Dynamic area charts tracking real-time footfall.
+*   **Demographics**: Interactive breakdowns of visitor data (Male/Female).
+*   **Key Metrics**: Instant insights into Daily Footfall and Average Dwell Time.
 
-1.  **Install Dependencies**:
+### 🛡️ Security & Alerts
+*   **Smart Alerts System**: Prioritized notifications (High/Medium/Low) for immediate attention.
+*   **Live Updates**: Real-time status changes for security events.
+
+### 🎨 Premium UI/UX
+*   **Pixel-perfect Implementation**: Exact match to Figma design specifications.
+*   **Responsive Layout**: Fully adaptive design for Desktop, Tablet, and Mobile.
+*   **Glassmorphism**: Modern aesthetic with subtle transparencies and gradients.
+
+---
+
+## 🛠️ Tech Stack
+
+*   **Framework**: [Angular 19 (Standalone)](https://angular.io)
+*   **Visualization**: [ApexCharts](https://apexcharts.com)
+*   **State Management**: RxJS (Observables)
+*   **Styling**: Modern CSS3 (Grid/Flexbox), Custom Properties
+*   **Build Tool**: Angular CLI
+
+---
+
+## 📂 Project Structure
+
+```text
+src/
+├── app/
+│   ├── dashboard/       # Core dashboard components & logic
+│   ├── login/          # Authentication & Guard logic
+│   ├── services/       # Data fetching & State services
+│   └── interceptors/   # HTTP Interceptors (Auth)
+├── assets/             # Static resources (Images, Icons)
+└── environments/       # Environment-specific configs
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+*   **Node.js**: v18+
+*   **npm**: v9+
+
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/GauravUpadhyay67/Kloudspot-Assigment.git
+    cd Kloudspot-Assigment
+    ```
+
+2.  **Install dependencies**
     ```bash
     npm install
     ```
 
-2.  **Start the Application**:
+3.  **Run the application**
     ```bash
     npm start
     ```
-    Navigate to `http://localhost:4200/`.
+    Navigate to `http://localhost:4200`.
 
-## Deployment
+### 🔐 Access Credentials
 
-This project is optimized for deployment on **Vercel** or **Netlify**.
+To access the secured dashboard, use the following admin credentials:
 
-### Vercel (Recommended)
-1.  Push your code to a GitHub repository.
-2.  Import project in Vercel.
-3.  Preset: **Angular**.
-4.  Build Command: `npm run build`
-5.  Output Directory: `dist/kloudspot-assignment/browser`
-
-### Netlify
-1.  Import from Git.
-2.  Build Command: `npm run build --prod`
-3.  Publish Directory: `dist/kloudspot-assignment/browser`
-
-## Credentials for Testing
-
-Use the specific test account provided in the instructions:
--   **Username**: `test@test.com`
--   **Password**: `1234567890`
-
-## API Integration
-
-The application integrates with the following endpoints:
--   `POST /api/auth/login` - Authentication
--   `POST /api/analytics/occupancy` - Live Occupancy
--   `POST /api/analytics/footfall` - Footfall
--   `POST /api/analytics/dwell` - Dwell Time
-
-Real-time updates are handled via `wss://hiring-dev.internal.kloudspot.com` (Alerts & Live Occupancy).
+*   **Email**: `admin@kloudspot.com`
+*   **Password**: `admin123`
 
 ---
-*Assignment Submission for Kloudspot Hiring Process*
+
+## 👨‍💻 Author
+
+Developed by **Gaurav Upadhyay** for Kloudspot.
