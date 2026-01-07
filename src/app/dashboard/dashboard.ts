@@ -95,7 +95,7 @@ export class Dashboard implements OnInit, OnDestroy {
     unreadAlerts = false;
     isSidebarOpen = false;
     isCollapsed = false;
-    // serverUnreachable = false; // Removed
+
 
     // Dropdown Logic
     locations = ['Avenue Mall', 'City Center', 'Marina Plaza'];
@@ -152,7 +152,7 @@ export class Dashboard implements OnInit, OnDestroy {
             stops: [0, 90, 100]
         }
     };
-    public chartColors = ['#6FCF97']; // Figma Green
+    public chartColors = ['#6FCF97']; 
     public chartDataLabels: ApexDataLabels = { enabled: false };
     public chartGrid: ApexGrid = {
         strokeDashArray: 4,
@@ -552,7 +552,7 @@ export class Dashboard implements OnInit, OnDestroy {
         this.fetchDashboardData();
         this.setupRealtimeUpdates();
 
-        // Select first alert by default to match screenshot
+        // Select first alert by default
         if (this.alerts.length > 0) {
             this.selectedAlert = this.alerts[0];
         }
