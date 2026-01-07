@@ -20,7 +20,7 @@ export class AuthService {
             tap(response => {
                 const token = response.token || response.access_token; // Handle both cases just to be safe
                 if (token) {
-                    localStorage.setItem(this.tokenKey, token);
+                    sessionStorage.setItem(this.tokenKey, token);
                 }
             }),
             timeout(60000) // 1 minute timeout for slow backend
@@ -28,14 +28,14 @@ export class AuthService {
     }
 
     logout() {
-        localStorage.removeItem(this.tokenKey);
+        sessionStorage.removeItem(this.tokenKey);
     }
 
     isLoggedIn(): boolean {
-        return !!localStorage.getItem(this.tokenKey);
+        return !!sessionStorage.getItem(this.tokenKey);
     }
 
     getToken(): string | null {
-        return localStorage.getItem(this.tokenKey);
+        return sessionStorage.getItem(this.tokenKey);
     }
 }
